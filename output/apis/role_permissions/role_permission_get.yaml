@@ -1,0 +1,62 @@
+version: "1.0"
+method: GET
+path: "/role_permissionses/:id/get"
+description: "Obtener role_permission por ID"
+
+auth:
+  required: true
+  permissions: ["role_permissionses.read"]
+
+params:
+  path:
+    - name: id
+      type: string
+      required: true
+      validation:
+        min: 1
+      error_message: "Debe proporcionar ID válido"
+
+commands:
+  # Obtener role_permission
+  - type: query
+    sql: |
+      SELECT *
+      FROM role_permissions 
+      WHERE role_id = :id
+    returns: "single"
+    on_result:
+      if_not_found:
+        action: "abort"
+        message: "role_permission no encontrado"
+
+response:
+  success:
+    code: 200
+    message: "role_permission obtenido exitosamente"
+  error:
+    code: 404
+    message: "role_permission no encontrado"
+  includes:
+    - relation: rol
+      query: |
+        SELECT * 
+        FROM roles 
+        WHERE id = :role_id
+      type: object
+    - relation: permission
+      query: |
+        SELECT * 
+        FROM permissions 
+        WHERE id = :permission_id
+      type: object
+    - relation: usuario
+      query: |
+        SELECT * 
+        FROM usuarios 
+        WHERE id = :assigned_by
+      type: object
+
+cache:
+  enabled: true
+  ttl: 300
+  key: "role_permissionses:"

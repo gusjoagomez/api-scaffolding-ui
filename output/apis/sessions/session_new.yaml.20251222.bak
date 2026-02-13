@@ -1,0 +1,90 @@
+version: "1.0"
+method: POST
+path: "/sessionses/new"
+description: "Crear nuevo session"
+
+auth:
+  required: true
+  permissions: ["sessionses.write"]
+
+params:
+  body:
+    - name: "user_id"
+      type: "int"
+      required: true
+      validation:
+        max: 2147483647
+        min: -2147483648
+      error_message: "user_id inválido"
+    - name: "token_hash"
+      type: "string"
+      required: true
+      validation:
+        max_length: 255
+      error_message: "token_hash inválido"
+    - name: "refresh_token_hash"
+      type: "string"
+      required: false
+      validation:
+        max_length: 255
+      error_message: "refresh_token_hash inválido"
+    - name: "ip_address"
+      type: "string"
+      required: false
+      error_message: "ip_address inválido"
+    - name: "user_agent"
+      type: "string"
+      required: false
+      error_message: "user_agent inválido"
+    - name: "expires_at"
+      type: "string"
+      required: true
+      error_message: "expires_at inválido"
+    - name: "revoked_at"
+      type: "string"
+      required: false
+      error_message: "revoked_at inválido"
+
+commands:
+  # Insertar session
+  - type: exec
+    sql: |
+      INSERT INTO sessions (
+        user_id,
+        token_hash,
+        refresh_token_hash,
+        ip_address,
+        user_agent,
+        expires_at,
+        revoked_at
+        ,created_at, created_by
+      ) VALUES (
+        :user_id,
+        :token_hash,
+        :refresh_token_hash,
+        :ip_address,
+        :user_agent,
+        :expires_at,
+        :revoked_at
+        ,NOW(), :user_id
+      )
+      RETURNING *
+
+response:
+  success:
+    code: 201
+    message: "session creado exitosamente"
+  error:
+    code: 400
+    message: "Error al crear session"
+    sqlerror: true
+
+hooks:
+  after:
+    - type: cache_invalidate
+      keys: ["sessionses:list:*", "sessionses:search:*"]
+
+audit:
+  enabled: true
+  log_params: true
+  sensitive_fields: ["password", "token"]

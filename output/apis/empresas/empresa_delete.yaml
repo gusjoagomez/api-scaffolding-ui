@@ -1,0 +1,53 @@
+version: "1.0"
+method: DELETE
+path: "/empresas/:id/delete"
+description: "Desactivar empresa"
+
+auth:
+  required: true
+  permissions: ["empresas.delete"]
+
+params:
+  path:
+    - name: id
+      type: int
+      required: true
+      validation:
+        min: 1
+      error_message: "Debe proporcionar ID válido a desactivar"
+
+commands:
+  # Verificar que el registro existe
+  - type: validation
+    sql: "SELECT COUNT(*) as count FROM empresas WHERE id = :id"
+    condition: "count = 0"
+    on_true:
+      action: stop
+      http_code: 404
+      message: "empresa no encontrado"
+
+  
+
+  
+  # Soft delete (marcar como inactivo o con deleted_at)
+  - type: exec
+    sql: |
+      UPDATE empresas SET
+        
+        deleted_at = NOW()
+        
+      WHERE id = :id
+  
+
+response:
+  success:
+    code: 200
+    message: "empresa desactivado exitosamente"
+
+hooks:
+  after:
+    - type: cache_invalidate
+      keys: ["empresas:list:*", "empresas:{id}"]
+
+audit:
+  enabled: true

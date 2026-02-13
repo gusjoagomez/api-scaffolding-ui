@@ -1,0 +1,44 @@
+version: "1.0"
+method: GET
+path: "/empresases/:id/get"
+description: "Obtener empresa por ID"
+
+auth:
+  required: true
+  permissions: ["empresases.read"]
+
+params:
+  path:
+    - name: id
+      type: int
+      required: true
+      validation:
+        min: 1
+      error_message: "Debe proporcionar ID válido"
+
+commands:
+  # Obtener empresa
+  - type: query
+    sql: |
+      SELECT *
+      FROM empresas 
+      WHERE id = :id
+      AND activo = true
+    returns: "single"
+    on_result:
+      if_not_found:
+        action: "abort"
+        message: "empresa no encontrado"
+
+response:
+  success:
+    code: 200
+    message: "empresa obtenido exitosamente"
+  error:
+    code: 404
+    message: "empresa no encontrado"
+
+cache:
+  enabled: true
+  ttl: 300
+  key: "empresases:"

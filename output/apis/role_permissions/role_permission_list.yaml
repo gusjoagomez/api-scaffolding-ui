@@ -1,0 +1,27 @@
+version: "1.0"
+method: GET
+path: "/role_permissionses/list"
+description: "Lista de role_permissionses"
+
+auth:
+  required: true
+  permissions: ["role_permissionses.read"]
+
+params:
+  query:
+    - name: page
+      type: int
+      default: 1
+    - name: limit
+      type: int
+      default: 20
+
+commands:
+  - type: query
+    sql: |
+      SELECT * 
+      FROM role_permissions
+      ORDER BY role_id ASC 
+      LIMIT :limit OFFSET :offset
+    transform_params:
+      offset: "(:page - 1) * :limit"

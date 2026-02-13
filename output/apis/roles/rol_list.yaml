@@ -1,0 +1,28 @@
+version: "1.0"
+method: GET
+path: "/roleses/list"
+description: "Lista de roleses"
+
+auth:
+  required: true
+  permissions: ["roleses.read"]
+
+params:
+  query:
+    - name: page
+      type: int
+      default: 1
+    - name: limit
+      type: int
+      default: 20
+
+commands:
+  - type: query
+    sql: |
+      SELECT * 
+      FROM roles
+      WHERE activo = true
+      ORDER BY id ASC 
+      LIMIT :limit OFFSET :offset
+    transform_params:
+      offset: "(:page - 1) * :limit"

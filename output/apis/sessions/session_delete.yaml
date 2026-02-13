@@ -1,0 +1,49 @@
+version: "1.0"
+method: DELETE
+path: "/sessions/:id/delete"
+description: "Eliminar session"
+
+auth:
+  required: true
+  permissions: ["sessions.delete"]
+
+params:
+  path:
+    - name: id
+      type: int
+      required: true
+      validation:
+        min: 1
+      error_message: "Debe proporcionar ID válido a borrar"
+
+commands:
+  # Verificar que el registro existe
+  - type: validation
+    sql: "SELECT COUNT(*) as count FROM sessions WHERE id = :id"
+    condition: "count = 0"
+    on_true:
+      action: stop
+      http_code: 404
+      message: "session no encontrado"
+
+  
+
+  
+  # Hard delete (eliminar permanentemente)
+  - type: exec
+    sql: |
+      DELETE FROM sessions WHERE id = :id
+  
+
+response:
+  success:
+    code: 200
+    message: "session eliminado exitosamente"
+
+hooks:
+  after:
+    - type: cache_invalidate
+      keys: ["sessions:list:*", "sessions:{id}"]
+
+audit:
+  enabled: true

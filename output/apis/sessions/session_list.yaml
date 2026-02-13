@@ -1,0 +1,27 @@
+version: "1.0"
+method: GET
+path: "/sessionses/list"
+description: "Lista de sessionses"
+
+auth:
+  required: true
+  permissions: ["sessionses.read"]
+
+params:
+  query:
+    - name: page
+      type: int
+      default: 1
+    - name: limit
+      type: int
+      default: 20
+
+commands:
+  - type: query
+    sql: |
+      SELECT * 
+      FROM sessions
+      ORDER BY id ASC 
+      LIMIT :limit OFFSET :offset
+    transform_params:
+      offset: "(:page - 1) * :limit"

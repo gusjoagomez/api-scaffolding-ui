@@ -1,0 +1,50 @@
+version: "1.0"
+method: GET
+path: "/audit_logs/:id/get"
+description: "Obtener audit_log por ID"
+
+auth:
+  required: true
+  permissions: ["audit_logs.read"]
+
+params:
+  path:
+    - name: id
+      type: int
+      required: true
+      validation:
+        min: 1
+      error_message: "Debe proporcionar ID válido"
+
+commands:
+  # Obtener audit_log
+  - type: query
+    sql: |
+      SELECT *
+      FROM audit_log 
+      WHERE id = :id
+    returns: "single"
+    on_result:
+      if_not_found:
+        action: "abort"
+        message: "audit_log no encontrado"
+
+response:
+  success:
+    code: 200
+    message: "audit_log obtenido exitosamente"
+  error:
+    code: 404
+    message: "audit_log no encontrado"
+  includes:
+    - relation: usuario
+      query: |
+        SELECT * 
+        FROM usuarios 
+        WHERE id = :user_id
+      type: object
+
+cache:
+  enabled: true
+  ttl: 300
+  key: "audit_logs:"

@@ -1,0 +1,54 @@
+version: "1.0"
+method: POST
+path: "/user_roleses/new"
+description: "Crear nuevo user_rol"
+
+auth:
+  required: true
+  permissions: ["user_roleses.write"]
+
+params:
+  body:
+    - name: "assigned_at"
+      type: "string"
+      required: false
+      error_message: "assigned_at inválido"
+    - name: "assigned_by"
+      type: "int"
+      required: false
+      validation:
+        max: 2147483647
+        min: -2147483648
+      error_message: "assigned_by inválido"
+
+commands:
+  # Insertar user_rol
+  - type: exec
+    sql: |
+      INSERT INTO user_roles (
+        assigned_at,
+        assigned_by
+      ) VALUES (
+        :assigned_at,
+        :assigned_by
+      )
+      RETURNING *
+
+response:
+  success:
+    code: 201
+    message: "user_rol creado exitosamente"
+  error:
+    code: 400
+    message: "Error al crear user_rol"
+    sqlerror: true
+
+hooks:
+  after:
+    - type: cache_invalidate
+      keys: ["user_roleses:list:*", "user_roleses:search:*"]
+
+audit:
+  enabled: true
+  log_params: true
+  sensitive_fields: ["password", "token"]

@@ -1,0 +1,19 @@
+# ===================
+# CONFIGURACIÓN DE BASE DE DATOS
+DB_DRIVER=postgres
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=password
+DB_NAME=proyecto1
+DB_SSL_MODE=disable
+DB_TIMEZONE=UTC
+#
+# UBICACION A GENERAR LOS ARCHIVOS
+#
+PROJECT_FILE_TYPES=yaml
+PROJECT_DIR=./apis/
+PROJECT_SCHEMA=public
+PROJECT_TABLES=*
+PROJECT_RELATIONS=*
+# ===================

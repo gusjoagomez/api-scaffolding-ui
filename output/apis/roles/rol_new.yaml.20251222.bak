@@ -1,0 +1,64 @@
+version: "1.0"
+method: POST
+path: "/roleses/new"
+description: "Crear nuevo rol"
+
+auth:
+  required: true
+  permissions: ["roleses.write"]
+
+params:
+  body:
+    - name: "nombre"
+      type: "string"
+      required: true
+      validation:
+        max_length: 50
+      error_message: "nombre inválido"
+    - name: "descripcion"
+      type: "string"
+      required: false
+      error_message: "descripcion inválido"
+    - name: "activo"
+      type: "bool"
+      required: false
+      default: true
+      error_message: "activo inválido"
+
+commands:
+  # Insertar rol
+  - type: exec
+    sql: |
+      INSERT INTO roles (
+        nombre,
+        descripcion,
+        activo,
+        created_by
+        ,created_at, created_by
+      ) VALUES (
+        :nombre,
+        :descripcion,
+        :activo,
+        :created_by
+        ,NOW(), :user_id
+      )
+      RETURNING *
+
+response:
+  success:
+    code: 201
+    message: "rol creado exitosamente"
+  error:
+    code: 400
+    message: "Error al crear rol"
+    sqlerror: true
+
+hooks:
+  after:
+    - type: cache_invalidate
+      keys: ["roleses:list:*", "roleses:search:*"]
+
+audit:
+  enabled: true
+  log_params: true
+  sensitive_fields: ["password", "token"]

@@ -1,0 +1,88 @@
+version: "1.0"
+method: POST
+path: "/empresases/new"
+description: "Crear nuevo empresa"
+
+auth:
+  required: true
+  permissions: ["empresases.write"]
+
+params:
+  body:
+    - name: "nombre"
+      type: "string"
+      required: true
+      validation:
+        max_length: 200
+      error_message: "nombre inválido"
+    - name: "ruc"
+      type: "string"
+      required: true
+      validation:
+        max_length: 20
+      error_message: "ruc inválido"
+    - name: "direccion"
+      type: "string"
+      required: false
+      error_message: "direccion inválido"
+    - name: "telefono"
+      type: "string"
+      required: false
+      validation:
+        max_length: 20
+        pattern: ^[0-9&#43;\-\s\(\)]{7,20}$
+      error_message: "telefono inválido"
+    - name: "email"
+      type: "string"
+      required: false
+      validation:
+        email: true
+        max_length: 255
+      error_message: "email inválido"
+    - name: "activo"
+      type: "bool"
+      required: false
+      default: true
+      error_message: "activo inválido"
+
+commands:
+  # Insertar empresa
+  - type: exec
+    sql: |
+      INSERT INTO empresas (
+        nombre,
+        ruc,
+        direccion,
+        telefono,
+        email,
+        activo
+        ,created_at, created_by
+      ) VALUES (
+        :nombre,
+        :ruc,
+        :direccion,
+        :telefono,
+        :email,
+        :activo
+        ,NOW(), :user_id
+      )
+      RETURNING *
+
+response:
+  success:
+    code: 201
+    message: "empresa creado exitosamente"
+  error:
+    code: 400
+    message: "Error al crear empresa"
+    sqlerror: true
+
+hooks:
+  after:
+    - type: cache_invalidate
+      keys: ["empresases:list:*", "empresases:search:*"]
+
+audit:
+  enabled: true
+  log_params: true
+  sensitive_fields: ["password", "token"]

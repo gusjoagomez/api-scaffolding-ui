@@ -1,0 +1,78 @@
+version: "1.0"
+method: POST
+path: "/permissionses/new"
+description: "Crear nuevo permission"
+
+auth:
+  required: true
+  permissions: ["permissionses.write"]
+
+params:
+  body:
+    - name: "codigo"
+      type: "string"
+      required: true
+      validation:
+        max_length: 100
+      error_message: "codigo inválido"
+    - name: "nombre"
+      type: "string"
+      required: true
+      validation:
+        max_length: 100
+      error_message: "nombre inválido"
+    - name: "descripcion"
+      type: "string"
+      required: false
+      error_message: "descripcion inválido"
+    - name: "modulo"
+      type: "string"
+      required: false
+      validation:
+        max_length: 50
+      error_message: "modulo inválido"
+    - name: "activo"
+      type: "bool"
+      required: false
+      default: true
+      error_message: "activo inválido"
+
+commands:
+  # Insertar permission
+  - type: exec
+    sql: |
+      INSERT INTO permissions (
+        codigo,
+        nombre,
+        descripcion,
+        modulo,
+        activo
+        ,created_at, created_by
+      ) VALUES (
+        :codigo,
+        :nombre,
+        :descripcion,
+        :modulo,
+        :activo
+        ,NOW(), :user_id
+      )
+      RETURNING *
+
+response:
+  success:
+    code: 201
+    message: "permission creado exitosamente"
+  error:
+    code: 400
+    message: "Error al crear permission"
+    sqlerror: true
+
+hooks:
+  after:
+    - type: cache_invalidate
+      keys: ["permissionses:list:*", "permissionses:search:*"]
+
+audit:
+  enabled: true
+  log_params: true
+  sensitive_fields: ["password", "token"]

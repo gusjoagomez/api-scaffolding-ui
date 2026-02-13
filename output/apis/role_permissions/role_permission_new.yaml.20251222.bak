@@ -1,0 +1,54 @@
+version: "1.0"
+method: POST
+path: "/role_permissionses/new"
+description: "Crear nuevo role_permission"
+
+auth:
+  required: true
+  permissions: ["role_permissionses.write"]
+
+params:
+  body:
+    - name: "assigned_at"
+      type: "string"
+      required: false
+      error_message: "assigned_at inválido"
+    - name: "assigned_by"
+      type: "int"
+      required: false
+      validation:
+        max: 2147483647
+        min: -2147483648
+      error_message: "assigned_by inválido"
+
+commands:
+  # Insertar role_permission
+  - type: exec
+    sql: |
+      INSERT INTO role_permissions (
+        assigned_at,
+        assigned_by
+      ) VALUES (
+        :assigned_at,
+        :assigned_by
+      )
+      RETURNING *
+
+response:
+  success:
+    code: 201
+    message: "role_permission creado exitosamente"
+  error:
+    code: 400
+    message: "Error al crear role_permission"
+    sqlerror: true
+
+hooks:
+  after:
+    - type: cache_invalidate
+      keys: ["role_permissionses:list:*", "role_permissionses:search:*"]
+
+audit:
+  enabled: true
+  log_params: true
+  sensitive_fields: ["password", "token"]

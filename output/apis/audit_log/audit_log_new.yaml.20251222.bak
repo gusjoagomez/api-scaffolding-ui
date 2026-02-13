@@ -1,0 +1,99 @@
+version: "1.0"
+method: POST
+path: "/audit_logs/new"
+description: "Crear nuevo audit_log"
+
+auth:
+  required: true
+  permissions: ["audit_logs.write"]
+
+params:
+  body:
+    - name: "user_id"
+      type: "int"
+      required: false
+      validation:
+        max: 2147483647
+        min: -2147483648
+      error_message: "user_id inválido"
+    - name: "action"
+      type: "string"
+      required: true
+      validation:
+        max_length: 50
+      error_message: "action inválido"
+    - name: "table_name"
+      type: "string"
+      required: false
+      validation:
+        max_length: 100
+      error_message: "table_name inválido"
+    - name: "record_id"
+      type: "int"
+      required: false
+      validation:
+        max: 2147483647
+        min: -2147483648
+      error_message: "record_id inválido"
+    - name: "old_values"
+      type: "object"
+      required: false
+      error_message: "old_values inválido"
+    - name: "new_values"
+      type: "object"
+      required: false
+      error_message: "new_values inválido"
+    - name: "ip_address"
+      type: "string"
+      required: false
+      error_message: "ip_address inválido"
+    - name: "user_agent"
+      type: "string"
+      required: false
+      error_message: "user_agent inválido"
+
+commands:
+  # Insertar audit_log
+  - type: exec
+    sql: |
+      INSERT INTO audit_log (
+        user_id,
+        action,
+        table_name,
+        record_id,
+        old_values,
+        new_values,
+        ip_address,
+        user_agent
+        ,created_at, created_by
+      ) VALUES (
+        :user_id,
+        :action,
+        :table_name,
+        :record_id,
+        :old_values,
+        :new_values,
+        :ip_address,
+        :user_agent
+        ,NOW(), :user_id
+      )
+      RETURNING *
+
+response:
+  success:
+    code: 201
+    message: "audit_log creado exitosamente"
+  error:
+    code: 400
+    message: "Error al crear audit_log"
+    sqlerror: true
+
+hooks:
+  after:
+    - type: cache_invalidate
+      keys: ["audit_logs:list:*", "audit_logs:search:*"]
+
+audit:
+  enabled: true
+  log_params: true
+  sensitive_fields: ["password", "token"]
