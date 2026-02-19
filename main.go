@@ -1,135 +1,86 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"api-scaffolding/internal/config"
 	"api-scaffolding/internal/database"
-	"api-scaffolding/internal/generator"
+	"api-scaffolding/internal/server"
+
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
 )
 
 func main() {
-	// Parsear argumentos de línea de comandos
 	var configPath string
-	flag.StringVar(&configPath, "configdb", "", "Path to .envapi configuration file")
+	flag.StringVar(&configPath, "config", "config/.env", "Path to .env configuration file")
 	flag.Parse()
 
-	// Si no se especifica, usar valor por defecto
-	if configPath == "" {
-		configPath = "config/.envapi"
-	}
-
-	// Cargar configuración
+	// Load Configuration
 	cfg, err := config.LoadConfig(configPath)
 	if err != nil {
-		log.Fatalf("Error loading configuration: %v", err)
+		// Fallback to old default if .env not found
+		if configPath == "config/.env" {
+			cfg, err = config.LoadConfig("config/.envapi")
+		}
+		if err != nil {
+			log.Fatalf("Error loading configuration: %v", err)
+		}
 	}
 
-	fmt.Printf("Configuration loaded from: %s\n", configPath)
-	fmt.Printf("Database: %s://%s:%s/%s\n", cfg.DBDriver, cfg.DBHost, cfg.DBPort, cfg.DBName)
-	fmt.Printf("Output directory: %s\n", cfg.ProjectDir)
+	// Connect to Meta Database (Postgres)
+	// The apigen schema lives here.
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		cfg.DBHost, cfg.DBPort, cfg.DBUsername, cfg.DBPassword,
+		cfg.DBName, cfg.DBSSLMode)
 
-	// Crear scanner de base de datos
-	dbScanner := database.NewScanner()
-
-	// Configurar conexión a base de datos
-	dbConfig := &database.DatabaseConfig{
-		Driver:   cfg.DBDriver,
-		Host:     cfg.DBHost,
-		Port:     cfg.DBPort,
-		Username: cfg.DBUsername,
-		Password: cfg.DBPassword,
-		Database: cfg.DBName,
-		SSLMode:  cfg.DBSSLMode,
-		Timezone: cfg.DBTimezone,
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		log.Fatalf("Error opening database: %v", err)
 	}
 
-	// Conectar a la base de datos
-	if err := dbScanner.Connect(dbConfig); err != nil {
+	if err := db.Ping(); err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
-	defer dbScanner.Disconnect()
+	defer db.Close()
 
-	fmt.Println("Connected to database successfully")
+	log.Println("Connected to meta database successfully")
 
-	// Crear directorio de templates si no existe
-	templatesDir := "templates"
-	if err := os.MkdirAll(templatesDir, 0755); err != nil {
-		log.Fatalf("Error creating templates directory: %v", err)
+	// Init Schema
+	if err := database.InitSchema(db, cfg.DBSchema); err != nil {
+		log.Printf("Warning during schema initialization: %v", err)
 	}
 
-	// Crear processor de templates
-	templateProcessor, err := generator.NewTemplateProcessor(templatesDir)
-	if err != nil {
-		log.Fatalf("Error creating template processor: %v", err)
-	}
+	// Start Server
+	srv := server.NewServer(cfg, db)
 
-	// Crear generador
-	genConfig := &generator.Config{
-		DBDriver:         cfg.DBDriver,
-		DBHost:           cfg.DBHost,
-		DBPort:           cfg.DBPort,
-		DBUsername:       cfg.DBUsername,
-		DBPassword:       cfg.DBPassword,
-		DBName:           cfg.DBName,
-		DBSSLMode:        cfg.DBSSLMode,
-		DBTimezone:       cfg.DBTimezone,
-		ProjectFileTypes: cfg.ProjectFileTypes,
-		ProjectDir:       cfg.ProjectDir,
-		ProjectSchema:    cfg.ProjectSchema,
-		ProjectTables:    cfg.ProjectTables,
-		ProjectRelations: cfg.ProjectRelations,
-	}
+	// Create a channel to listen for interrupt signals
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
-	gen := generator.NewGenerator(genConfig, dbScanner, templateProcessor)
-
-	// Generar archivos
-	if err := gen.Generate(); err != nil {
-		log.Fatalf("Error during generation: %v", err)
-	}
-
-	fmt.Println("Scaffolding completed successfully!")
-}
-
-func init() {
-	// Configurar log
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
-
-	// Crear directorio de configuración si no existe
-	if _, err := os.Stat("config"); os.IsNotExist(err) {
-		if err := os.MkdirAll("config", 0755); err != nil {
-			log.Printf("Warning: Could not create config directory: %v", err)
+	go func() {
+		if err := srv.Start(); err != nil {
+			log.Fatalf("Server error: %v", err)
 		}
-	}
+	}()
 
-	// Crear archivo de configuración de ejemplo si no existe
-	configExample := `# ===================
-# CONFIGURACIÓN DE BASE DE DATOS
-DB_DRIVER=postgres
-DB_HOST=localhost
-DB_PORT=5432
-DB_USERNAME=postgres
-DB_PASSWORD=password
-DB_NAME=proyecto1
-DB_SSL_MODE=disable
-DB_TIMEZONE=UTC
-#
-# UBICACION A GENERAR LOS ARCHIVOS
-#
-PROJECT_FILE_TYPES=yaml
-PROJECT_DIR=./apis/
-PROJECT_SCHEMA=public
-PROJECT_TABLES=*
-PROJECT_RELATIONS=*
-# ===================`
+	<-stop
+	log.Println("Shutting down server...")
 
-	configFile := "config/.envapi.example"
-	if _, err := os.Stat(configFile); os.IsNotExist(err) {
-		if err := os.WriteFile(configFile, []byte(configExample), 0644); err != nil {
-			log.Printf("Warning: Could not create example config file: %v", err)
-		}
-	}
+	// Context for graceful shutdown could be added here
+	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	// graceful shutdown logic would go here if server had Shutdown method,
+	// but http.ListenAndServe blocks.
+	// To support graceful shutdown properly, srv.Start() should return the *http.Server
+	// and we call Shutdown on it.
+	// For now, simple exit is fine for dev tool.
 }

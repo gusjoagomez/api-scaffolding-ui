@@ -1,0 +1,84 @@
+{{define "content"}}
+<div class="header">
+    <div>
+        <h1 class="title">Subsystems</h1>
+        <p style="color: var(--text-muted);">Manage subsystems for project: <strong>{{.ProjectName}}</strong></p>
+    </div>
+    <div style="display: flex; gap: 1rem;">
+        <a href="/" class="btn btn-outline">
+            <i class="ph ph-arrow-left"></i> Back to Projects
+        </a>
+        <a href="/subsystems/new?projectname={{.ProjectName}}" class="btn btn-primary">
+            <i class="ph ph-plus"></i> New Subsystem
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Subsystem</th>
+                    <th>Details</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Subsystems}}
+                <tr>
+                    <td style="font-weight: 500;">
+                        <a href="/subsystems/edit?projectname={{.ProjectName}}&subsystem={{.Subsystem}}"
+                            style="color: var(--primary);">
+                            {{.Subsystem}}
+                        </a>
+                    </td>
+                    <td style="color: var(--text-muted);">{{if .Details.Valid}}{{.Details.String}}{{else}}-{{end}}</td>
+                    <td>
+                        <div class="actions">
+                            <a href="/subsystems/edit?projectname={{.ProjectName}}&subsystem={{.Subsystem}}"
+                                class="icon-btn" title="Edit">
+                                <i class="ph ph-pencil-simple"></i>
+                            </a>
+                            {{if ne .Subsystem "public"}}
+                            <a href="#" class="icon-btn" title="Delete"
+                                onclick="deleteSubsystem('{{.ProjectName}}', '{{.Subsystem}}'); return false;"
+                                style="color: var(--danger);">
+                                <i class="ph ph-trash"></i>
+                            </a>
+                            {{end}}
+                        </div>
+                    </td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="3" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                        <i class="ph ph-tree-structure" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+                        No subsystems found. Create one to get started.
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function deleteSubsystem(projectName, subsystem) {
+    if (!confirm('Are you sure you want to delete subsystem "' + subsystem + '"?')) return;
+
+    fetch('/subsystems/delete', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'projectname=' + encodeURIComponent(projectName) + '&subsystem=' + encodeURIComponent(subsystem)
+    })
+    .then(r => {
+        if (!r.ok) return r.text().then(t => { throw new Error(t); });
+        window.location.reload();
+    })
+    .catch(err => {
+        alert('Error: ' + err.message);
+    });
+}
+</script>
+{{end}}

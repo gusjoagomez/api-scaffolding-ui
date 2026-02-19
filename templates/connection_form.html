@@ -1,0 +1,113 @@
+{{define "content"}}
+<div class="header">
+    <h1 class="title">{{if .Connection}}Edit Connection: {{.Connection.Connection}}{{else}}New Connection{{end}}</h1>
+    <a href="/connections?projectname={{.ProjectName}}" class="btn btn-outline">
+        <i class="ph ph-arrow-left"></i> Back
+    </a>
+</div>
+
+<div class="card" style="padding: 2rem; max-width: 800px; margin: 0 auto;">
+    <form action="/connections/save" method="POST">
+        <input type="hidden" name="projectname" value="{{.ProjectName}}">
+        {{if .Connection}}
+        <input type="hidden" name="is_new" value="false">
+        <div class="form-group">
+            <label for="connection">Connection Name</label>
+            <input type="text" id="connection" name="connection" value="{{.Connection.Connection}}" readonly
+                style="background-color: var(--background);">
+        </div>
+        {{else}}
+        <input type="hidden" name="is_new" value="true">
+        <div class="form-group">
+            <label for="connection">Connection Name</label>
+            <input type="text" id="connection" name="connection" placeholder="main-db" required>
+        </div>
+        {{end}}
+
+        <div class="grid grid-2">
+            <div class="form-group">
+                <label for="dbtype">DB Type</label>
+                <select id="dbtype" name="dbtype">
+                    <option value="postgres" {{if .Connection}}{{if eq .Connection.DbType.String "postgres"
+                        }}selected{{end}}{{end}}>Postgres</option>
+                    <option value="mysql" {{if .Connection}}{{if eq .Connection.DbType.String "mysql"
+                        }}selected{{end}}{{end}}>MySQL</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="dbhost">Host</label>
+                <input type="text" id="dbhost" name="dbhost"
+                    value="{{if .Connection}}{{.Connection.DbHost.String}}{{else}}localhost{{end}}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="dbport">Port</label>
+                <input type="text" id="dbport" name="dbport"
+                    value="{{if .Connection}}{{.Connection.DbPort.String}}{{else}}5432{{end}}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="dbname">Database Name</label>
+                <input type="text" id="dbname" name="dbname"
+                    value="{{if .Connection}}{{.Connection.DbName.String}}{{end}}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="dbschema">Schema</label>
+                <input type="text" id="dbschema" name="dbschema"
+                    value="{{if .Connection}}{{.Connection.DbSchema.String}}{{else}}public{{end}}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="dbuser">User</label>
+                <input type="text" id="dbuser" name="dbuser"
+                    value="{{if .Connection}}{{.Connection.DbUser.String}}{{end}}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="dbpass">Password</label>
+                <input type="password" id="dbpass" name="dbpass"
+                    value="{{if .Connection}}{{.Connection.DbPass.String}}{{end}}">
+            </div>
+
+            <div class="form-group">
+                <label for="dbsslmode">SSL Mode</label>
+                <select id="dbsslmode" name="dbsslmode">
+                    <option value="disable" {{if .Connection}}{{if eq .Connection.DbSSLMode.String "disable"
+                        }}selected{{end}}{{end}}>Disable</option>
+                    <option value="require" {{if .Connection}}{{if eq .Connection.DbSSLMode.String "require"
+                        }}selected{{end}}{{end}}>Require</option>
+                    <option value="verify-full" {{if .Connection}}{{if eq .Connection.DbSSLMode.String "verify-full"
+                        }}selected{{end}}{{end}}>Verify Full</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="dbtimezone">Timezone</label>
+                <input type="text" id="dbtimezone" name="dbtimezone"
+                    value="{{if .Connection}}{{.Connection.DbTimezone.String}}{{else}}UTC{{end}}">
+            </div>
+        </div>
+
+        <div
+            style="margin-top: 2rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 1rem;">
+            {{if .Connection}}
+            <a href="/connections/tables?projectname={{.ProjectName}}&connection={{.Connection.Connection}}"
+                class="btn btn-outline" style="color: var(--primary); border-color: var(--primary);">
+                <i class="ph ph-table"></i> Tables in connection
+            </a>
+            {{else}}
+            <div></div>
+            {{end}}
+
+            <div style="display: flex; gap: 1rem;">
+                <a href="/connections?projectname={{.ProjectName}}" class="btn btn-outline">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="ph ph-floppy-disk"></i> Save Connection
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{{end}}

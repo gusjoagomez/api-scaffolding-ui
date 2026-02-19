@@ -69,6 +69,10 @@ func NewTemplateProcessor(templatesDir string) (*TemplateProcessor, error) {
 			"append":                appendFunc,
 			"gt":                    greaterThan,
 			"indent":                indentFunc,
+			// Sprig-compatible helpers used in templates
+			"default": defaultValue,
+			"empty":   isEmpty,
+			"add":     addInt,
 		},
 	}
 
@@ -1095,6 +1099,11 @@ func greaterThan(a, b int) bool {
 	return a > b
 }
 
+// addInt returns a + b (used as "add" in templates).
+func addInt(a, b int) int {
+	return a + b
+}
+
 // shouldIncludeInParams determina si un campo debe incluirse en los parámetros
 func shouldIncludeInParams(fieldName string, isPrimaryKey bool) bool {
 	fieldName = strings.ToLower(fieldName)
@@ -1122,4 +1131,43 @@ func shouldIncludeInParams(fieldName string, isPrimaryKey bool) bool {
 func indentFunc(spaces int, v string) string {
 	pad := strings.Repeat(" ", spaces)
 	return strings.ReplaceAll(v, "\n", "\n"+pad)
+}
+
+// defaultValue returns `val` if it is non-empty/non-zero, otherwise returns `def`.
+// This mimics the Sprig/Helm `default` function so templates can use:
+//
+//	{{ .SomeField | default "fallback" }}
+func defaultValue(def interface{}, val interface{}) interface{} {
+	if isEmpty(val) {
+		return def
+	}
+	return val
+}
+
+// isEmpty reports whether a value is its zero-value (nil, "", 0, false, empty slice/map).
+func isEmpty(v interface{}) bool {
+	if v == nil {
+		return true
+	}
+	switch val := v.(type) {
+	case string:
+		return val == ""
+	case bool:
+		return !val
+	case int:
+		return val == 0
+	case int32:
+		return val == 0
+	case int64:
+		return val == 0
+	case float32:
+		return val == 0
+	case float64:
+		return val == 0
+	case []interface{}:
+		return len(val) == 0
+	case map[string]interface{}:
+		return len(val) == 0
+	}
+	return false
 }

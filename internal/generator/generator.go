@@ -113,6 +113,13 @@ func (g *Generator) generateTableFiles(table database.Table) error {
 	return nil
 }
 
+// PrepareTemplateDataPublic is the exported version of prepareTemplateData.
+// allTables is needed to resolve N:M relations; pass the full list from the scanner.
+func (g *Generator) PrepareTemplateDataPublic(table database.Table, allTables []database.Table) map[string]interface{} {
+	g.allTables = allTables
+	return g.prepareTemplateData(table)
+}
+
 func (g *Generator) prepareTemplateData(table database.Table) map[string]interface{} {
 	data := make(map[string]interface{})
 

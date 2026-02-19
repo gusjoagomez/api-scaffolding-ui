@@ -1,0 +1,72 @@
+{{define "content"}}
+<div class="header">
+    <h1 class="title">{{if .ProjectName}}Edit Project: {{.ProjectName}}{{else}}New Project{{end}}</h1>
+    <a href="/" class="btn btn-outline">
+        <i class="ph ph-arrow-left"></i> Back
+    </a>
+</div>
+
+<div class="card" style="padding: 2rem; max-width: 800px; margin: 0 auto;">
+    <form action="/projects/save" method="POST">
+        {{if .ProjectName}}
+        <input type="hidden" name="is_new" value="false">
+        <div class="form-group">
+            <label for="projectname">Project Name</label>
+            <input type="text" id="projectname" name="projectname" value="{{.ProjectName}}" readonly
+                style="background-color: var(--background);">
+        </div>
+        {{else}}
+        <input type="hidden" name="is_new" value="true">
+        <div class="form-group">
+            <label for="projectname">Project Name</label>
+            <input type="text" id="projectname" name="projectname" placeholder="my-awesome-api" required>
+        </div>
+        {{end}}
+
+        <div class="grid grid-2">
+            <div class="form-group">
+                <label for="envdir">Environment Dir</label>
+                <input type="text" id="envdir" name="envdir" value="{{if .EnvDir.Valid}}{{.EnvDir.String}}{{end}}"
+                    placeholder="./config">
+            </div>
+
+            <div class="form-group">
+                <label for="rootdir">Root Dir</label>
+                <input type="text" id="rootdir" name="rootdir" value="{{if .RootDir.Valid}}{{.RootDir.String}}{{end}}"
+                    placeholder="./">
+            </div>
+
+            <div class="form-group">
+                <label for="maindir">Main Dir</label>
+                <input type="text" id="maindir" name="maindir" value="{{if .MainDir.Valid}}{{.MainDir.String}}{{end}}"
+                    placeholder="./cmd/server">
+            </div>
+
+            <div class="form-group">
+                <label for="modeldir">Model Dir</label>
+                <input type="text" id="modeldir" name="modeldir"
+                    value="{{if .ModelDir.Valid}}{{.ModelDir.String}}{{end}}" placeholder="./internal/models">
+            </div>
+
+            <div class="form-group">
+                <label for="actiondir">Action Dir</label>
+                <input type="text" id="actiondir" name="actiondir"
+                    value="{{if .ActionDir.Valid}}{{.ActionDir.String}}{{end}}" placeholder="./internal/actions">
+            </div>
+
+            <div class="form-group">
+                <label for="testdir">Test Dir</label>
+                <input type="text" id="testdir" name="testdir" value="{{if .TestDir.Valid}}{{.TestDir.String}}{{end}}"
+                    placeholder="./internal/tests">
+            </div>
+        </div>
+
+        <div style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 1rem;">
+            <a href="/" class="btn btn-outline">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                <i class="ph ph-floppy-disk"></i> Save Project
+            </button>
+        </div>
+    </form>
+</div>
+{{end}}

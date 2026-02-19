@@ -23,6 +23,7 @@ type Config struct {
 	ProjectSchema    string
 	ProjectTables    []string
 	ProjectRelations []string
+	DBSchema         string
 }
 
 func LoadConfig(configPath string) (*Config, error) {
@@ -42,6 +43,7 @@ func LoadConfig(configPath string) (*Config, error) {
 		DBUsername:       getEnv("DB_USERNAME", ""),
 		DBPassword:       getEnv("DB_PASSWORD", ""),
 		DBName:           getEnv("DB_NAME", ""),
+		DBSchema:         getEnv("DB_SCHEMA", "apigen"),
 		DBSSLMode:        getEnv("DB_SSL_MODE", "disable"),
 		DBTimezone:       getEnv("DB_TIMEZONE", "UTC"),
 		ProjectFileTypes: strings.ToLower(getEnv("PROJECT_FILE_TYPES", "yaml")),

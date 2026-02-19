@@ -1,0 +1,44 @@
+{{define "content"}}
+<div class="header">
+    <h1 class="title">{{if .Subsystem}}Edit Subsystem: {{.Subsystem.Subsystem}}{{else}}New Subsystem{{end}}</h1>
+    <a href="/subsystems?projectname={{.ProjectName}}" class="btn btn-outline">
+        <i class="ph ph-arrow-left"></i> Back
+    </a>
+</div>
+
+<div class="card" style="padding: 2rem; max-width: 600px; margin: 0 auto;">
+    <form action="/subsystems/save" method="POST">
+        <input type="hidden" name="projectname" value="{{.ProjectName}}">
+        {{if .Subsystem}}
+        <input type="hidden" name="is_new" value="false">
+        <div class="form-group">
+            <label for="subsystem">Subsystem Name</label>
+            <input type="text" id="subsystem" name="subsystem" value="{{.Subsystem.Subsystem}}" readonly
+                style="background-color: var(--background);">
+        </div>
+        {{else}}
+        <input type="hidden" name="is_new" value="true">
+        <div class="form-group">
+            <label for="subsystem">Subsystem Name</label>
+            <input type="text" id="subsystem" name="subsystem" placeholder="e.g. admin, backoffice" required
+                maxlength="15" pattern="[a-zA-Z0-9_-]+">
+            <small style="color: var(--text-muted); font-size: 0.8rem;">Max 15 characters. Letters, numbers, hyphens and underscores only.</small>
+        </div>
+        {{end}}
+
+        <div class="form-group">
+            <label for="details">Details</label>
+            <textarea id="details" name="details" rows="4"
+                style="width: 100%; padding: 0.75rem; border-radius: var(--radius); border: 1px solid var(--border); font-family: inherit; font-size: 1rem; resize: vertical;"
+                placeholder="Describe the purpose of this subsystem...">{{if .Subsystem}}{{if .Subsystem.Details.Valid}}{{.Subsystem.Details.String}}{{end}}{{end}}</textarea>
+        </div>
+
+        <div style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+            <a href="/subsystems?projectname={{.ProjectName}}" class="btn btn-outline">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                <i class="ph ph-floppy-disk"></i> Save Subsystem
+            </button>
+        </div>
+    </form>
+</div>
+{{end}}

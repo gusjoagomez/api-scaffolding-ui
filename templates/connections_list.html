@@ -1,0 +1,73 @@
+{{define "content"}}
+<div class="header">
+    <div>
+        <h1 class="title">Connections</h1>
+        <p style="color: var(--text-muted);">Manage database connections for project: <strong>{{.ProjectName}}</strong>
+        </p>
+    </div>
+    <div style="display: flex; gap: 1rem;">
+        <a href="/" class="btn btn-outline">
+            <i class="ph ph-arrow-left"></i> Back to Projects
+        </a>
+        <a href="/connections/new?projectname={{.ProjectName}}" class="btn btn-primary">
+            <i class="ph ph-plus"></i> New Connection
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Connection Name</th>
+                    <th>Type</th>
+                    <th>Host</th>
+                    <th>Database</th>
+                    <th>Schema</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Connections}}
+                <tr>
+                    <td style="font-weight: 500;">
+                        <a href="/connections/edit?projectname={{.ProjectName}}&connection={{.Connection}}"
+                            style="color: var(--primary);">
+                            {{.Connection}}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="badge {{if eq .DbType.String " postgres"}}badge-blue{{else}}badge-green{{end}}">
+                            {{.DbType.String}}
+                        </span>
+                    </td>
+                    <td>{{.DbHost.String}}</td>
+                    <td>{{.DbName.String}}</td>
+                    <td>{{.DbSchema.String}}</td>
+                    <td>
+                        <div class="actions">
+                            <a href="/connections/edit?projectname={{.ProjectName}}&connection={{.Connection}}"
+                                class="icon-btn" title="Edit">
+                                <i class="ph ph-pencil-simple"></i>
+                            </a>
+                            <a href="/connections/tables?projectname={{.ProjectName}}&connection={{.Connection}}"
+                                class="icon-btn" title="Tables in connection">
+                                <i class="ph ph-table"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                        <i class="ph ph-plugs" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+                        No connections found. Create one to get started.
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{end}}

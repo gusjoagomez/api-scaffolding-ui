@@ -1,0 +1,236 @@
+{{define "content"}}
+<div class="header">
+    <div>
+        <h1 class="title">Tables in Connection: {{.Connection}}</h1>
+        <p style="color: var(--text-muted);">Manage tables for project: <strong>{{.ProjectName}}</strong>
+        </p>
+    </div>
+    <div style="display: flex; gap: 1rem;">
+        <a href="/connections?projectname={{.ProjectName}}" class="btn btn-outline" title="">
+            <i class="ph ph-arrow-left"></i> Back to Connections
+        </a>
+        <a href="/connections/get-tables?projectname={{.ProjectName}}&connection={{.Connection}}"
+            class="btn btn-primary">
+            <i class="ph ph-database-magnifying"></i> Get info tables
+        </a>
+    </div>
+</div>
+
+<!-- ===== Grid 1: Tables ===== -->
+<div class="card">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 40px; text-align: center;"><input type="checkbox" id="select-all-tables"></th>
+                    <th>Table Name</th>
+                    <th>Schema</th>
+                    <th>Entity Name</th>
+                    <th>Detail</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Tables}}
+                <tr>
+                    <td style="text-align: center;"><input type="checkbox" class="chk-table" name="tables"
+                            value="{{.TableName}}"></td>
+                    <td style="font-weight: 500;">{{.TableName}}</td>
+                    <td>{{.DbSchema}}</td>
+                    <td>{{.EntityName.String}}</td>
+                    <td>{{.Detail.String}}</td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                        <i class="ph ph-table" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+                        No tables found. Click "Get info tables" to fetch metadata.
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ===== Grid 2: File Templates ===== -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div style="padding: 1rem 1.25rem 0.5rem;">
+        <h2 style="font-size: 1rem; font-weight: 600; color: var(--text-primary); margin: 0;">
+            <i class="ph ph-file-code" style="margin-right: 0.4rem;"></i>File Templates to Generate
+        </h2>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0.25rem 0 0;">
+            Select which YAML files should be generated for the selected tables.
+        </p>
+    </div>
+    <div class="table-container">
+        <table id="tbl-file-templates">
+            <thead>
+                <tr>
+                    <th style="width: 40px; text-align: center;"><input type="checkbox" id="select-all-tpl"></th>
+                    <th>Category</th>
+                    <th>Name</th>
+                    <th>Output File Pattern</th>
+                    <th>Template</th>
+                </tr>
+            </thead>
+            <tbody id="tpl-body">
+                <tr id="tpl-loading">
+                    <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                        <i class="ph ph-spinner" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;"></i>
+                        Loading templates…
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ===== Generate button ===== -->
+<div id="gen-config" data-project="{{.ProjectName}}" data-connection="{{.Connection}}" style="display:none;"></div>
+<div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; align-items: center;">
+    <span id="gen-status" style="font-size: 0.85rem; color: var(--text-muted);"></span>
+    <button id="btn-generate" class="btn btn-primary" style="gap: 0.5rem;">
+        <i class="ph ph-lightning"></i> Generate
+    </button>
+</div>
+
+<!-- ===== Results panel ===== -->
+<div id="gen-results" class="card" style="margin-top: 1.5rem; display: none;">
+    <div style="padding: 1rem 1.25rem 0.5rem;">
+        <h2 style="font-size: 1rem; font-weight: 600; margin: 0;">
+            <i class="ph ph-list-checks" style="margin-right: 0.4rem;"></i>Generation Results
+        </h2>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 60px;">Status</th>
+                    <th>File</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody id="results-body"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const cfg = document.getElementById('gen-config');
+        const projectName = cfg.dataset.project;
+        const connection = cfg.dataset.connection;
+
+
+        // ── Select-all: Tables ──────────────────────────────────────────────────
+        const selAllTables = document.getElementById('select-all-tables');
+        if (selAllTables) {
+            selAllTables.addEventListener('change', function (e) {
+                document.querySelectorAll('.chk-table').forEach(cb => cb.checked = e.target.checked);
+            });
+        }
+
+        // ── Select-all: Templates ───────────────────────────────────────────────
+        const selAllTpl = document.getElementById('select-all-tpl');
+        if (selAllTpl) {
+            selAllTpl.addEventListener('change', function (e) {
+                document.querySelectorAll('.chk-tpl').forEach(cb => cb.checked = e.target.checked);
+            });
+        }
+
+        // ── Load file_templates via API ─────────────────────────────────────────
+        fetch('/file-templates')
+            .then(r => r.json())
+            .then(templates => {
+                const tbody = document.getElementById('tpl-body');
+                tbody.innerHTML = '';
+
+                if (!templates || templates.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-muted);">
+                    No file templates found in apigen.file_templates.</td></tr>`;
+                    return;
+                }
+
+                templates.forEach(t => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                    <td style="text-align:center;">
+                        <input type="checkbox" class="chk-tpl" value="${t.id}">
+                    </td>
+                    <td>${t.category || ''}</td>
+                    <td><strong>${t.name || ''}</strong></td>
+                    <td style="font-family:monospace;font-size:0.8rem;">${(t.path || '') + (t.file || '')}</td>
+                    <td style="font-family:monospace;font-size:0.8rem;">${t.template || ''}</td>
+                `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => {
+                document.getElementById('tpl-body').innerHTML =
+                    `<tr><td colspan="5" style="text-align:center;padding:2rem;color:#e74c3c;">
+                    Error loading templates: ${err}</td></tr>`;
+            });
+
+        // ── Generate button ─────────────────────────────────────────────────────
+        document.getElementById('btn-generate').addEventListener('click', function () {
+            const tables = [...document.querySelectorAll('.chk-table:checked')].map(cb => cb.value);
+            const tpls = [...document.querySelectorAll('.chk-tpl:checked')].map(cb => cb.value);
+
+            if (tables.length === 0) {
+                alert('Please select at least one table.');
+                return;
+            }
+            if (tpls.length === 0) {
+                alert('Please select at least one file template.');
+                return;
+            }
+
+            const statusEl = document.getElementById('gen-status');
+            const btn = this;
+            btn.disabled = true;
+            statusEl.textContent = 'Generating…';
+
+            const body = new URLSearchParams();
+            body.append('projectname', projectName);
+            body.append('connection', connection);
+            tables.forEach(t => body.append('tables[]', t));
+            tpls.forEach(t => body.append('file_templates[]', t));
+
+            fetch('/connections/generate', { method: 'POST', body })
+                .then(r => r.json())
+                .then(data => {
+                    btn.disabled = false;
+                    statusEl.textContent = '';
+
+                    const panel = document.getElementById('gen-results');
+                    const tbody = document.getElementById('results-body');
+                    tbody.innerHTML = '';
+                    panel.style.display = '';
+
+                    (data.results || []).forEach(r => {
+                        const icon = r.status === 'ok'
+                            ? '<i class="ph ph-check-circle" style="color:#27ae60;font-size:1.1rem;"></i>'
+                            : '<i class="ph ph-x-circle"     style="color:#e74c3c;font-size:1.1rem;"></i>';
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                        <td style="text-align:center;">${icon}</td>
+                        <td style="font-family:monospace;font-size:0.8rem;">${r.file}</td>
+                        <td style="color:var(--text-muted);font-size:0.82rem;">${r.message || ''}</td>
+                    `;
+                        tbody.appendChild(tr);
+                    });
+
+                    const ok = (data.results || []).filter(r => r.status === 'ok').length;
+                    const err = (data.results || []).filter(r => r.status !== 'ok').length;
+                    statusEl.textContent = `✓ ${ok} generated${err ? ', ✗ ' + err + ' errors' : ''}`;
+                    statusEl.style.color = err ? '#e74c3c' : '#27ae60';
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    statusEl.textContent = 'Error: ' + err;
+                    statusEl.style.color = '#e74c3c';
+                });
+        });
+    });
+</script>
+{{end}}

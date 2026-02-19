@@ -58,8 +58,6 @@ func (s *Scanner) Disconnect() {
 }
 
 func (s *Scanner) GetTables(schema string, tableFilter []string) ([]Table, error) {
-	var tables []Table
-
 	switch s.driver {
 	case "postgres":
 		return s.getPostgresTables(schema, tableFilter)
@@ -68,8 +66,6 @@ func (s *Scanner) GetTables(schema string, tableFilter []string) ([]Table, error
 	default:
 		return nil, fmt.Errorf("unsupported database driver: %s", s.driver)
 	}
-
-	return tables, nil
 }
 
 func (s *Scanner) getPostgresTables(schema string, tableFilter []string) ([]Table, error) {

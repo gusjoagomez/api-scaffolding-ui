@@ -1,0 +1,459 @@
+{{define "content"}}
+<!-- CodeMirror 5 CSS & JS from CDN -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/theme/material-palenight.min.css">
+<style>
+  .endpoints-layout {
+    display: flex;
+    gap: 1.5rem;
+    height: calc(100vh - 160px);
+  }
+  .file-tree-panel {
+    width: 320px;
+    min-width: 260px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .file-tree-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #f9fafb;
+  }
+  .file-tree-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+  }
+  .tree-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text);
+    transition: background 0.15s;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .tree-item:hover {
+    background: #eef2ff;
+  }
+  .tree-item.active {
+    background: #e0e7ff;
+    color: var(--primary);
+    font-weight: 500;
+  }
+  .tree-item .tree-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .tree-item .tree-icon.folder {
+    color: #eab308;
+  }
+  .tree-item .tree-icon.file-yaml {
+    color: #8b5cf6;
+  }
+  .tree-item .tree-icon.file-json {
+    color: #10b981;
+  }
+  .tree-dir-children {
+    display: none;
+  }
+  .tree-dir-children.open {
+    display: block;
+  }
+  .tree-toggle {
+    font-size: 0.7rem;
+    transition: transform 0.2s;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .tree-toggle.open {
+    transform: rotate(90deg);
+  }
+
+  /* Editor panel */
+  .editor-panel {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .editor-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f9fafb;
+  }
+  .editor-filename {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .editor-filename .badge {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+  }
+  .editor-body {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+  }
+  .editor-body .CodeMirror {
+    height: 100%;
+    font-size: 0.875rem;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  }
+  .editor-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    gap: 0.5rem;
+  }
+  .btn-save {
+    background: var(--success);
+    color: white;
+    border: none;
+    padding: 0.4rem 1rem;
+    border-radius: var(--radius);
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+  }
+  .btn-save:hover {
+    background: #059669;
+    transform: translateY(-1px);
+  }
+  .btn-save:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .save-status {
+    font-size: 0.8rem;
+    margin-right: 0.75rem;
+  }
+  .save-status.success {
+    color: var(--success);
+  }
+  .save-status.error {
+    color: var(--danger);
+  }
+  .modified-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #f59e0b;
+    border-radius: 50%;
+  }
+  .tree-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: var(--text-muted);
+    gap: 0.5rem;
+    font-size: 0.85rem;
+  }
+  .tree-empty {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+</style>
+
+<div class="header">
+    <div>
+        <h1 class="title">Endpoints</h1>
+        <p style="color: var(--text-muted); margin-top: 0.25rem; font-size: 0.9rem;">
+            Project: <strong>{{.ProjectName}}</strong> &mdash; {{.RootDir}}
+        </p>
+    </div>
+    <a href="/" class="btn btn-outline">
+        <i class="ph ph-arrow-left"></i> Back to Projects
+    </a>
+</div>
+
+<div class="endpoints-layout">
+    <!-- File tree panel -->
+    <div class="file-tree-panel">
+        <div class="file-tree-header">
+            <i class="ph ph-folder-open"></i> Files
+        </div>
+        <div class="file-tree-body" id="file-tree">
+            <div class="tree-loading">
+                <i class="ph ph-spinner"></i> Loading files...
+            </div>
+        </div>
+    </div>
+
+    <!-- Editor panel -->
+    <div class="editor-panel">
+        <div class="editor-header">
+            <div class="editor-filename" id="editor-filename">
+                <i class="ph ph-file-text"></i>
+                <span id="editor-filename-text">No file selected</span>
+                <span id="modified-indicator" style="display:none;"><span class="modified-dot"></span></span>
+            </div>
+            <div style="display: flex; align-items: center;">
+                <span id="save-status" class="save-status"></span>
+                <button class="btn-save" id="btn-save" disabled onclick="saveFile()">
+                    <i class="ph ph-floppy-disk"></i> Save
+                </button>
+            </div>
+        </div>
+        <div class="editor-body" id="editor-body">
+            <div class="editor-placeholder" id="editor-placeholder">
+                <i class="ph ph-cursor-click"></i> Select a file from the tree to edit
+            </div>
+            <div id="editor-container" style="display:none; height:100%;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- CodeMirror 5 JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/yaml/yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/fold/foldcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/fold/foldgutter.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/fold/indent-fold.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/fold/brace-fold.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/fold/foldgutter.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/search/search.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/search/searchcursor.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/dialog/dialog.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/dialog/dialog.min.css">
+
+<script>
+const PROJECT_NAME = "{{.ProjectName}}";
+let editor = null;
+let currentFilePath = null;
+let originalContent = "";
+let isModified = false;
+
+// ── Build tree ──────────────────────────────────────────────────────
+function loadTree() {
+    fetch("/endpoints/tree?projectname=" + encodeURIComponent(PROJECT_NAME))
+        .then(r => r.json())
+        .then(tree => {
+            const container = document.getElementById("file-tree");
+            if (!tree || tree.length === 0) {
+                container.innerHTML = '<div class="tree-empty"><i class="ph ph-folder-dashed"></i><br>No YAML or JSON files found</div>';
+                return;
+            }
+            container.innerHTML = "";
+            renderTree(tree, container, 0);
+        })
+        .catch(() => {
+            document.getElementById("file-tree").innerHTML = '<div class="tree-empty">Error loading files</div>';
+        });
+}
+
+function renderTree(entries, parent, depth) {
+    entries.forEach(entry => {
+        if (entry.isDir) {
+            // Directory row
+            const row = document.createElement("div");
+            row.className = "tree-item";
+            row.style.paddingLeft = (0.75 + depth * 1) + "rem";
+            row.innerHTML =
+                '<i class="ph ph-caret-right tree-toggle"></i>' +
+                '<i class="ph ph-folder tree-icon folder"></i>' +
+                '<span>' + escapeHtml(entry.name) + '</span>';
+
+            const childrenDiv = document.createElement("div");
+            childrenDiv.className = "tree-dir-children";
+
+            row.addEventListener("click", () => {
+                const toggle = row.querySelector(".tree-toggle");
+                const isOpen = childrenDiv.classList.toggle("open");
+                toggle.classList.toggle("open", isOpen);
+                // Change folder icon
+                const folderIcon = row.querySelector(".folder");
+                folderIcon.classList.toggle("ph-folder", !isOpen);
+                folderIcon.classList.toggle("ph-folder-open", isOpen);
+            });
+
+            parent.appendChild(row);
+            parent.appendChild(childrenDiv);
+
+            if (entry.children) {
+                renderTree(entry.children, childrenDiv, depth + 1);
+            }
+        } else {
+            // File row
+            const ext = entry.name.split(".").pop().toLowerCase();
+            const iconClass = (ext === "json") ? "file-json" : "file-yaml";
+            const phIcon = (ext === "json") ? "ph-brackets-curly" : "ph-file-code";
+
+            const row = document.createElement("div");
+            row.className = "tree-item";
+            row.style.paddingLeft = (0.75 + depth * 1 + 1.1) + "rem";
+            row.dataset.path = entry.path;
+            row.innerHTML =
+                '<i class="ph ' + phIcon + ' tree-icon ' + iconClass + '"></i>' +
+                '<span>' + escapeHtml(entry.name) + '</span>';
+
+            row.addEventListener("click", () => openFile(entry.path, row));
+            parent.appendChild(row);
+        }
+    });
+}
+
+// ── Open file ───────────────────────────────────────────────────────
+function openFile(path, rowEl) {
+    // Check unsaved changes
+    if (isModified) {
+        if (!confirm("You have unsaved changes. Discard them?")) return;
+    }
+
+    // Highlight active row
+    document.querySelectorAll(".tree-item.active").forEach(el => el.classList.remove("active"));
+    if (rowEl) rowEl.classList.add("active");
+
+    fetch("/endpoints/read?projectname=" + encodeURIComponent(PROJECT_NAME) + "&path=" + encodeURIComponent(path))
+        .then(r => r.json())
+        .then(data => {
+            currentFilePath = data.path;
+            originalContent = data.content;
+            isModified = false;
+
+            const ext = path.split(".").pop().toLowerCase();
+            const mode = (ext === "json") ? {name: "javascript", json: true} : "yaml";
+            const badgeCls = (ext === "json") ? "badge-green" : "badge-blue";
+            const badgeText = ext.toUpperCase();
+
+            // Update header
+            document.getElementById("editor-filename-text").textContent = path;
+            document.getElementById("editor-filename").querySelector(".badge")?.remove();
+            const badge = document.createElement("span");
+            badge.className = "badge " + badgeCls;
+            badge.textContent = badgeText;
+            document.getElementById("editor-filename").appendChild(badge);
+
+            // Show editor
+            document.getElementById("editor-placeholder").style.display = "none";
+            document.getElementById("editor-container").style.display = "block";
+            document.getElementById("btn-save").disabled = true;
+            document.getElementById("modified-indicator").style.display = "none";
+            document.getElementById("save-status").textContent = "";
+
+            if (!editor) {
+                editor = CodeMirror(document.getElementById("editor-container"), {
+                    value: data.content,
+                    mode: mode,
+                    theme: "material-palenight",
+                    lineNumbers: true,
+                    tabSize: 2,
+                    indentWithTabs: false,
+                    matchBrackets: true,
+                    autoCloseBrackets: true,
+                    foldGutter: true,
+                    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+                    lineWrapping: false,
+                    extraKeys: {
+                        "Ctrl-S": function() { saveFile(); },
+                        "Cmd-S": function() { saveFile(); }
+                    }
+                });
+                editor.on("change", onEditorChange);
+            } else {
+                editor.setValue(data.content);
+                editor.setOption("mode", mode);
+                editor.clearHistory();
+            }
+            editor.refresh();
+        })
+        .catch(err => {
+            document.getElementById("save-status").textContent = "Error loading file";
+            document.getElementById("save-status").className = "save-status error";
+        });
+}
+
+function onEditorChange() {
+    const current = editor.getValue();
+    isModified = (current !== originalContent);
+    document.getElementById("btn-save").disabled = !isModified;
+    document.getElementById("modified-indicator").style.display = isModified ? "inline" : "none";
+    document.getElementById("save-status").textContent = "";
+}
+
+// ── Save file ───────────────────────────────────────────────────────
+function saveFile() {
+    if (!currentFilePath || !editor) return;
+
+    const btn = document.getElementById("btn-save");
+    const status = document.getElementById("save-status");
+    btn.disabled = true;
+    status.textContent = "Saving...";
+    status.className = "save-status";
+
+    fetch("/endpoints/save", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            projectname: PROJECT_NAME,
+            path: currentFilePath,
+            content: editor.getValue()
+        })
+    })
+    .then(r => {
+        if (!r.ok) throw new Error("Save failed");
+        return r.json();
+    })
+    .then(() => {
+        originalContent = editor.getValue();
+        isModified = false;
+        btn.disabled = true;
+        document.getElementById("modified-indicator").style.display = "none";
+        status.textContent = "Saved!";
+        status.className = "save-status success";
+        setTimeout(() => { status.textContent = ""; }, 3000);
+    })
+    .catch(err => {
+        btn.disabled = false;
+        status.textContent = "Error saving";
+        status.className = "save-status error";
+    });
+}
+
+function escapeHtml(s) {
+    const d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+// ── Init ────────────────────────────────────────────────────────────
+loadTree();
+</script>
+{{end}}
