@@ -1,6 +1,6 @@
 version: "1.0"
 method: PUT
-path: "/{{.TableNameLower}}/:id/update"
+path: "/{{.SubsystemLower}}/{{.TableNameLower}}/:id/update"
 description: "Actualizar {{.EntityName}}"
 
 auth:

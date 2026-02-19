@@ -420,7 +420,7 @@ func (g *Generator) createDefaultTemplate(templateName string) error {
 	defaultTemplates := map[string]string{
 		"entidad_new.tpl": `version: "1.0"
 method: POST
-path: "/{{.EntityNamePlural}}/new"
+path: "/{{.SubsystemLower}}/{{.EntityNamePlural}}/new"
 description: "Crear nuevo {{.EntityName}}"
 
 auth:
@@ -471,7 +471,7 @@ commands:
 
 		"entidad_update.tpl": `version: "1.0"
 method: PUT
-path: "/{{.EntityNamePlural}}/:id/update"
+path: "/{{.SubsystemLower}}/{{.EntityNamePlural}}/:id/update"
 description: "Actualizar {{.EntityName}}"
 
 auth:
@@ -545,7 +545,7 @@ hooks:
 
 		"entidad_delete.tpl": `version: "1.0"
 method: DELETE
-path: "/{{.EntityNamePlural}}/:id/delete"
+path: "/{{.SubsystemLower}}/{{.EntityNamePlural}}/:id/delete"
 description: "Eliminar {{.EntityName}} {{if .HasSoftDelete}}(soft delete){{else}}(físico){{end}}"
 
 auth:
@@ -612,7 +612,7 @@ audit:
 
 		"entidad_list.tpl": `version: "1.0"
 method: GET
-path: "/{{.EntityNamePlural}}/list"
+path: "/{{.SubsystemLower}}/{{.EntityNamePlural}}/list"
 description: "Lista de {{.EntityNamePlural}}"
 
 auth:
@@ -653,7 +653,7 @@ commands:
 
 		"entidad_get.tpl": `version: "1.0"
 method: GET
-path: "/{{.EntityNamePlural}}/:id/get"
+path: "/{{.SubsystemLower}}/{{.EntityNamePlural}}/:id/get"
 description: "Obtener {{.EntityName}} por ID"
 
 auth:

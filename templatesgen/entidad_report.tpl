@@ -1,6 +1,6 @@
 version: "1.0"
 method: GET
-path: "/{{.TableNameLower}}/report"
+path: "/{{.SubsystemLower}}/{{.TableNameLower}}/report"
 description: "Reporte de {{.TableNameLower}} activos"
 
 auth:

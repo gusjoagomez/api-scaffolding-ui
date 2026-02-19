@@ -10,25 +10,9 @@
     {{range .}}
     <div class="card fade-in">
         <div style="padding: 1.5rem;">
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                <h3 style="font-size: 1.25rem; font-weight: 600;">{{.ProjectName}}</h3>
-                <div class="actions">
-                    <a href="/projects/edit?projectname={{.ProjectName}}" class="icon-btn" title="Edit">
-                        <i class="ph ph-pencil-simple"></i>
-                    </a>
-                    <a href="/connections?projectname={{.ProjectName}}" class="icon-btn" title="Connections">
-                        <i class="ph ph-database"></i>
-                    </a>
-                    <a href="/endpoints?projectname={{.ProjectName}}" class="icon-btn" title="Endpoints">
-                        <i class="ph ph-arrows-split"></i>
-                    </a>
-                    <a href="/subsystems?projectname={{.ProjectName}}" class="icon-btn" title="Subsystems">
-                        <i class="ph ph-tree-structure"></i>
-                    </a>
-                </div>
-            </div>
+            <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.75rem;">{{.ProjectName}}</h3>
 
-            <div style="margin-bottom: 1.5rem; color: var(--text-muted); font-size: 0.875rem;">
+            <div style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.875rem;">
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                     <i class="ph ph-folder"></i>
                     <span>{{if .RootDir.Valid}}{{.RootDir.String}}{{else}}-{{end}}</span>
@@ -39,6 +23,20 @@
                 </div>
             </div>
 
+            <div class="actions" style="border-top: 1px solid var(--border); padding-top: 0.75rem;">
+                <a href="/projects/edit?projectname={{.ProjectName}}" class="icon-btn" title="Edit">
+                    <i class="ph ph-pencil-simple"></i>
+                </a>
+                <a href="/connections?projectname={{.ProjectName}}" class="icon-btn" title="Connections">
+                    <i class="ph ph-database"></i>
+                </a>
+                <a href="/endpoints?projectname={{.ProjectName}}" class="icon-btn" title="Endpoints">
+                    <i class="ph ph-arrows-split"></i>
+                </a>
+                <a href="/subsystems?projectname={{.ProjectName}}" class="icon-btn" title="Subsystems">
+                    <i class="ph ph-tree-structure"></i>
+                </a>
+            </div>
         </div>
     </div>
     {{end}}

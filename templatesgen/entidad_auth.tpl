@@ -1,6 +1,6 @@
 version: "1.0"
 method: POST
-path: "/auth/login"
+path: "/{{.SubsystemLower}}/auth/login"
 description: "Autenticar usuario (compatible PostgreSQL y MySQL)"
 
 auth:

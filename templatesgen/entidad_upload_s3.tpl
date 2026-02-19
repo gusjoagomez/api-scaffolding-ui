@@ -1,6 +1,6 @@
 version: "1.0"
 method: POST
-path: "/{{.TableNameLower}}/:id/upload-avatar-s3"
+path: "/{{.SubsystemLower}}/{{.TableNameLower}}/:id/upload-avatar-s3"
 description: "Subir archivo de avatar del {{.EntityName}} a S3"
 
 auth:

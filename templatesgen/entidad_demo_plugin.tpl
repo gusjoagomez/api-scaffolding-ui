@@ -1,6 +1,6 @@
 version: "1.0"
 method: POST
-path: "/{{.TableNameLower}}/demo-plugin"
+path: "/{{.SubsystemLower}}/{{.TableNameLower}}/demo-plugin"
 description: "Test endpoint for demo plugin - updates {{.TableNameLower}}"
 
 auth:

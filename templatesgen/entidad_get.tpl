@@ -1,6 +1,6 @@
 version: "1.0"
 method: GET
-path: "/{{.TableNameLower}}/:id/get"
+path: "/{{.SubsystemLower}}/{{.TableNameLower}}/:id/get"
 description: "Obtener {{.EntityName}} por ID"
 
 auth:

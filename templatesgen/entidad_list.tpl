@@ -1,6 +1,6 @@
 version: "1.0"
 method: GET
-path: "/{{.TableNameLower}}/list"
+path: "/{{.SubsystemLower}}/{{.TableNameLower}}/list"
 description: "Lista de {{.EntityName}}"
 
 auth:

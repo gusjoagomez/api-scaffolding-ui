@@ -1,6 +1,6 @@
 version: "1.0"
 method: PUT
-path: "/{{.TableNameLower}}/:id/custom"
+path: "/{{.SubsystemLower}}/{{.TableNameLower}}/:id/custom"
 description: "Funcion custom para actualizar {{.EntityName}}"
 
 auth:

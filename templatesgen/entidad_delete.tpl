@@ -1,6 +1,6 @@
 version: "1.0"
 method: DELETE
-path: "/{{.TableNameLower}}/:id/delete"
+path: "/{{.SubsystemLower}}/{{.TableNameLower}}/:id/delete"
 description: "{{if .HasSoftDelete}}Desactivar{{else}}Eliminar{{end}} {{.EntityName}} (soft delete)"
 
 auth:

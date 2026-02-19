@@ -1,6 +1,6 @@
 version: "1.0"
 method: POST
-path: "/{{.TableNameLower}}/new"
+path: "/{{.SubsystemLower}}/{{.TableNameLower}}/new"
 description: "Crear nuevo {{.EntityName}}"
 
 auth:

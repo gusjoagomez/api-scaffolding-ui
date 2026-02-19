@@ -52,6 +52,26 @@
     </div>
 </div>
 
+<!-- ===== Subsystem selector ===== -->
+<div class="card" style="margin-top: 1.5rem; padding: 1rem 1.25rem;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <i class="ph ph-tree-structure" style="font-size: 1.1rem; color: var(--primary);"></i>
+            <label for="subsystem-select" style="font-weight: 600; font-size: 0.9rem; margin: 0;">Subsystem:</label>
+        </div>
+        <select id="subsystem-select" style="width: auto; min-width: 200px; padding: 0.5rem 0.75rem;">
+            {{range .Subsystems}}
+            <option value="{{.Subsystem}}">{{.Subsystem}}{{if .Details.Valid}} — {{.Details.String}}{{end}}</option>
+            {{else}}
+            <option value="public">public</option>
+            {{end}}
+        </select>
+        <span style="font-size: 0.82rem; color: var(--text-muted);">
+            Generated path: <code style="background: #f1f5f9; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.8rem;">[rootprj]/<strong id="subsystem-path-preview">{{if .Subsystems}}{{(index .Subsystems 0).Subsystem}}{{else}}public{{end}}</strong>/[entity]/</code>
+        </span>
+    </div>
+</div>
+
 <!-- ===== Grid 2: File Templates ===== -->
 <div class="card" style="margin-top: 1.5rem;">
     <div style="padding: 1rem 1.25rem 0.5rem;">
@@ -122,6 +142,15 @@
         const connection = cfg.dataset.connection;
 
 
+        // ── Subsystem selector preview ────────────────────────────────────────────
+        const subsystemSelect = document.getElementById('subsystem-select');
+        const subsystemPreview = document.getElementById('subsystem-path-preview');
+        if (subsystemSelect && subsystemPreview) {
+            subsystemSelect.addEventListener('change', function () {
+                subsystemPreview.textContent = this.value;
+            });
+        }
+
         // ── Select-all: Tables ──────────────────────────────────────────────────
         const selAllTables = document.getElementById('select-all-tables');
         if (selAllTables) {
@@ -190,9 +219,12 @@
             btn.disabled = true;
             statusEl.textContent = 'Generating…';
 
+            const subsystem = document.getElementById('subsystem-select').value;
+
             const body = new URLSearchParams();
             body.append('projectname', projectName);
             body.append('connection', connection);
+            body.append('subsystem', subsystem);
             tables.forEach(t => body.append('tables[]', t));
             tpls.forEach(t => body.append('file_templates[]', t));
 

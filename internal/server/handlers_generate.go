@@ -97,12 +97,16 @@ func (s *Server) handleGenerate(w http.ResponseWriter, r *http.Request) {
 
 	projectName := r.FormValue("projectname")
 	connName := r.FormValue("connection")
+	subsystem := r.FormValue("subsystem")
 	selectedTables := r.Form["tables[]"]
 	selectedTemplateIDs := r.Form["file_templates[]"]
 
 	if projectName == "" || connName == "" {
 		http.Error(w, "projectname and connection are required", http.StatusBadRequest)
 		return
+	}
+	if subsystem == "" {
+		subsystem = "public"
 	}
 	if len(selectedTables) == 0 || len(selectedTemplateIDs) == 0 {
 		http.Error(w, "select at least one table and one template", http.StatusBadRequest)
@@ -240,6 +244,10 @@ func (s *Server) handleGenerate(w http.ResponseWriter, r *http.Request) {
 
 		templateData := gen.PrepareTemplateDataPublic(table, allTables)
 
+		// Inject subsystem variables into template data
+		templateData["Subsystem"] = subsystem
+		templateData["SubsystemLower"] = strings.ToLower(subsystem)
+
 		// entity name (singular, lowercase) for path substitutions
 		entityName := strings.ToLower(templateData["EntityName"].(string))
 
@@ -249,9 +257,16 @@ func (s *Server) handleGenerate(w http.ResponseWriter, r *http.Request) {
 			// TemplateProcessor keys are the basename
 			templateBasename := filepath.Base(templateFile)
 
-			// Resolve output path: replace [rootprj] and [entity]
+			// Resolve output path: replace [rootprj], [subsystem] and [entity]
+			// New directory structure: [rootprj]/[subsystem]/[entity]/
 			outPath := strings.ReplaceAll(ft.Path.String, "[rootprj]", rootDir.String)
+			outPath = strings.ReplaceAll(outPath, "[subsystem]", strings.ToLower(subsystem))
 			outPath = strings.ReplaceAll(outPath, "[entity]", strings.ToLower(tableName))
+			// If the path pattern doesn't contain [subsystem], insert it after rootdir
+			if !strings.Contains(ft.Path.String, "[subsystem]") {
+				outPath = strings.ReplaceAll(ft.Path.String, "[rootprj]", filepath.Join(rootDir.String, strings.ToLower(subsystem)))
+				outPath = strings.ReplaceAll(outPath, "[entity]", strings.ToLower(tableName))
+			}
 			outFile := strings.ReplaceAll(ft.File.String, "[entity]", entityName)
 			fullPath := filepath.Join(outPath, outFile)
 

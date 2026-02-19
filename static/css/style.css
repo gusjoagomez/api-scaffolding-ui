@@ -172,10 +172,14 @@ td {
 }
 
 .icon-btn {
-  padding: 0.25rem;
+  padding: 0.4rem;
   color: var(--text-muted);
   border-radius: var(--radius);
-  transition: color 0.2s;
+  transition: color 0.2s, background-color 0.2s;
+  font-size: 1.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .icon-btn:hover {
@@ -215,7 +219,7 @@ input:focus, select:focus {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1.5rem;
 }
 

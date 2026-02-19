@@ -38,6 +38,27 @@ func (s *Server) handleTablesList(w http.ResponseWriter, r *http.Request) {
 		tables = append(tables, t)
 	}
 
+	// Fetch subsystems for this project
+	subRows, err := s.db.Query(
+		fmt.Sprintf("SELECT projectname, subsystem, details FROM %s.subsystem WHERE projectname = $1 ORDER BY subsystem", s.cfg.DBSchema),
+		projectName,
+	)
+	if err != nil {
+		renderError(w, err, http.StatusInternalServerError)
+		return
+	}
+	defer subRows.Close()
+
+	var subsystems []models.Subsystem
+	for subRows.Next() {
+		var sub models.Subsystem
+		if err := subRows.Scan(&sub.ProjectName, &sub.Subsystem, &sub.Details); err != nil {
+			renderError(w, err, http.StatusInternalServerError)
+			return
+		}
+		subsystems = append(subsystems, sub)
+	}
+
 	tmpl, err := template.ParseFiles("templates/layout.html", "templates/tables_list.html")
 	if err != nil {
 		renderError(w, err, http.StatusInternalServerError)
@@ -48,10 +69,12 @@ func (s *Server) handleTablesList(w http.ResponseWriter, r *http.Request) {
 		ProjectName string
 		Connection  string
 		Tables      []models.Table
+		Subsystems  []models.Subsystem
 	}{
 		ProjectName: projectName,
 		Connection:  connName,
 		Tables:      tables,
+		Subsystems:  subsystems,
 	}
 
 	if err := tmpl.Execute(w, data); err != nil {

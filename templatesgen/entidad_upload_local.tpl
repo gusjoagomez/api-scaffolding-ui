@@ -1,6 +1,6 @@
 version: "1.0"
 method: POST
-path: "/{{.TableNameLower}}/:id/upload-avatar"
+path: "/{{.SubsystemLower}}/{{.TableNameLower}}/:id/upload-avatar"
 description: "Subir archivo de avatar del {{.EntityName}} al servidor local"
 
 auth:
